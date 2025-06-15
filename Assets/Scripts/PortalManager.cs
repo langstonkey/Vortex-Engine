@@ -5,18 +5,17 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using static UnityEngine.EventSystems.EventTrigger;
 using UnityEngine.InputSystem;
+using NaughtyAttributes;
 
 public class PortalManager : MonoBehaviour
 {
-    public Dictionary<string, Portal> portals = new Dictionary<string, Portal>();
+    public static Dictionary<string, Portal> portals = new Dictionary<string, Portal>();
 
     IEnumerator Start()
     {
         StartCoroutine("CreatePortalConnections");
 
-        yield return null;
-
-        StartCoroutine("ColorMe");
+        //StartCoroutine("ColorMe");
 
         foreach (var portal in portals.Values)
         {
@@ -95,6 +94,30 @@ public class PortalManager : MonoBehaviour
 
         yield return new WaitForSeconds(1f/20f);
 
-        //StartCoroutine("ColorMe");
+        StartCoroutine("ColorMe");
+    }
+
+    [Button]
+    public void PortalStatus()
+    {
+        foreach (var portalEntry in portals)
+        {
+            Portal portal = portalEntry.Value;
+            portal.StatusCommand();
+        }
+    }
+
+    [Button]
+    public void PortalQuery()
+    {
+        foreach (var portalEntry in portals)
+        {
+            Portal portal = portalEntry.Value;
+            
+            for (int i = 0; i < 64; i++)
+            {
+                portal.Query(0,(byte)i);
+            }
+        }
     }
 }

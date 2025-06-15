@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Windows;
+using static UnityEditor.Rendering.CameraUI;
 using static UnityEngine.InputSystem.LowLevel.InputEventTrace;
 
 public class Portal
@@ -92,8 +93,14 @@ public class Portal
         input[1] = Convert.ToByte('Q');
         input[2] = characterIndex;
         input[3] = block;
+        byte[] output;
 
-        portalConnection.Write(input);
+        do
+        {
+            portalConnection.Write(input);
+            output = portalConnection.Read();
+        }
+        while (HandleResponse(output) != Convert.ToByte('Q'));
     }
 
     public byte HandleResponse(byte[] input)
@@ -105,6 +112,14 @@ public class Portal
 
         if (input[0] == Convert.ToByte('S'))
         {
+            string s = "";
+            for (int i = 0; i < input.Length; i++)
+            {
+                s += " " + input[i];
+            }
+            Debug.Log(s);
+
+            return input[0];
             byte[] figureStatusData = input.Skip(1).Take(4).ToArray();
             int figureStatusInt = BitConverter.ToInt32(figureStatusData);
 
@@ -120,6 +135,16 @@ public class Portal
                     Debug.Log("Changed");
                 }
             }
+        }
+
+        if (input[0] == Convert.ToByte('Q'))
+        {
+            string s = "";
+            for (int i = 0; i < input.Length; i++)
+            {
+                s += " " + input[i];
+            }
+            Debug.Log(s);
         }
 
         return input[0];

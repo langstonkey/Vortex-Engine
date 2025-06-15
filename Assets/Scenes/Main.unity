@@ -285,7 +285,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcd5d33c8650a9d40988d52c109df084, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabPortal: {fileID: 590818515906004550, guid: ea648d1dc3fb13a428e9d4dad7ab8e05, type: 3}
 --- !u!4 &409628950
 Transform:
   m_ObjectHideFlags: 0
