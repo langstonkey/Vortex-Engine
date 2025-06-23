@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using static UnityEngine.EventSystems.EventTrigger;
 using UnityEngine.InputSystem;
 using NaughtyAttributes;
+using UnityEditor.Experimental.GraphView;
 
 public class PortalManager : MonoBehaviour
 {
     public static Dictionary<string, Portal> portals = new Dictionary<string, Portal>();
+    [Min(1)] public float pollingRate = 0;
 
     IEnumerator Start()
     {
@@ -103,21 +105,71 @@ public class PortalManager : MonoBehaviour
         foreach (var portalEntry in portals)
         {
             Portal portal = portalEntry.Value;
-            portal.StatusCommand();
+            portal.StatusCommand(true);
+        }
+    }
+
+    [SerializeField] byte characterIndex = 0;
+    [SerializeField] byte[] data;
+    [Button]
+    public void PortalQuery()
+    {
+        if (queryInProgress)
+        {
+            Debug.LogWarning("Query in progress, repeated requests are ignored");
+        }
+        else
+        {
+            StartCoroutine(PortalQueryAllBytes());
         }
     }
 
     [Button]
-    public void PortalQuery()
+    public void PortalWrite()
     {
+        if (writeInProgress)
+        {
+            Debug.LogWarning("Write in progress, repeated requests are ignored");
+        }
+        else
+        {
+            StartCoroutine(PortalWriteAllBytes());
+        }
+    }
+
+    bool queryInProgress = false;
+    IEnumerator PortalQueryAllBytes()
+    {
+        queryInProgress = true;
         foreach (var portalEntry in portals)
         {
             Portal portal = portalEntry.Value;
-            
+
             for (int i = 0; i < 64; i++)
             {
-                portal.Query(0,(byte)i);
+                portal.Query(characterIndex, (byte)i, true);
+
+                yield return new WaitForSeconds(1f / pollingRate);
             }
         }
+        queryInProgress = false;
+    }
+    bool writeInProgress = false;
+    IEnumerator PortalWriteAllBytes()
+    {
+        writeInProgress = true;
+        foreach (var portalEntry in portals)
+        {
+            Portal portal = portalEntry.Value;
+
+            for (int i = 0; i < 64; i++)
+            {
+                portal.Write(characterIndex, (byte)i, data, true);
+
+                yield return new WaitForSeconds(1f / pollingRate);
+                yield return new WaitForSeconds(1f / pollingRate);
+            }
+        }
+        writeInProgress = false;
     }
 }

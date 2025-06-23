@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -57,7 +58,7 @@ public class Portal
         Debug.Log(output[1] + " - " + output[2]);
     }
 
-    public void StatusCommand()
+    public void StatusCommand(bool verbose = false)
     {
         byte[] input = new byte[0x21];
         input[1] = Convert.ToByte('S');
@@ -71,7 +72,7 @@ public class Portal
             output = portalConnection.Read();
 
             // we do not handle status here - in HandleResponse//
-        } while (HandleResponse(output) != Convert.ToByte('S'));
+        } while (HandleResponse(output, verbose) != Convert.ToByte('S'));
     }
 
     public void ColorCommand(byte r, byte g, byte b)
@@ -86,7 +87,7 @@ public class Portal
         portalConnection.Write(input);
     }
 
-    public void Query(byte characterIndex, byte block)
+    public void Query(byte characterIndex, byte block, bool verbose)
     {
         byte[] input = new byte[0x21];
 
@@ -100,10 +101,38 @@ public class Portal
             portalConnection.Write(input);
             output = portalConnection.Read();
         }
-        while (HandleResponse(output) != Convert.ToByte('Q'));
+        while (HandleQuery(output, verbose) != Convert.ToByte('Q'));
+    }
+    public void Write(byte characterIndex, byte block, byte[] data, bool verbose)
+    {
+        if (data.Length > 16)
+        {
+            Debug.LogWarning("Too many bytes in write attempt");
+            return;
+        }
+
+        byte[] input = new byte[0x21];
+
+        input[1] = Convert.ToByte('W');
+        input[2] = characterIndex;
+        input[3] = block;
+            
+        for (int i = 0; i < 16; i++)
+        {
+            input[i + 4] = data[i];
+        }
+
+        byte[] output;
+
+        do
+        {
+            portalConnection.Write(input);
+            output = portalConnection.Read();
+        }
+        while (HandleWrite(output, verbose) != Convert.ToByte('W'));
     }
 
-    public byte HandleResponse(byte[] input)
+    public byte HandleResponse(byte[] input, bool verbose = false)
     {
         if(input.Length != 0x20)
         {
@@ -112,14 +141,8 @@ public class Portal
 
         if (input[0] == Convert.ToByte('S'))
         {
-            string s = "";
-            for (int i = 0; i < input.Length; i++)
-            {
-                s += " " + input[i];
-            }
-            Debug.Log(s);
+            if (verbose) Debug.Log(BitConverter.ToString(input));
 
-            return input[0];
             byte[] figureStatusData = input.Skip(1).Take(4).ToArray();
             int figureStatusInt = BitConverter.ToInt32(figureStatusData);
 
@@ -137,14 +160,34 @@ public class Portal
             }
         }
 
-        if (input[0] == Convert.ToByte('Q'))
+        return input[0];
+    }
+
+    public byte HandleQuery(byte[] input, bool verbose = false)
+    {
+        if (input.Length != 0x20)
         {
-            string s = "";
-            for (int i = 0; i < input.Length; i++)
-            {
-                s += " " + input[i];
-            }
-            Debug.Log(s);
+            throw new Exception();
+        }
+
+        if (verbose)
+        {
+            if (input[6] != 1) Debug.Log(BitConverter.ToString(input));
+        }
+
+        return input[0];
+    }
+
+    public byte HandleWrite(byte[] input, bool verbose = false)
+    {
+        if (input.Length != 0x20)
+        {
+            throw new Exception();
+        }
+
+        if (verbose)
+        {
+            if (input[6] != 1) Debug.Log(BitConverter.ToString(input));
         }
 
         return input[0];
